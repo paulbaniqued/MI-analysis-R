@@ -126,8 +126,42 @@ ggplot() +
   theme_cowplot()
   
 # Time-based Epoching
-eeg_epoching <- eeg_epochs(data = eeg_tempftd$C3, srate = 500, events = markers_reduced)
-eeg_epoching
+sampling_frequency = 500 #Hertz
+epoch_length = 10 #seconds
+samples = (sampling_frequency * epoch_length)
+t_e <- seq(from = 0.000, to = 10.000, length.out = 5001)
+t_e <- round(t_e, digits = 3)
+t_e <- data.frame(t_e)
+
+# All the LEFT trials
+epoch_counter = 1
+left_trials <- data.frame()
+left_trial_signals <- data.frame()[1:5001, ]
+for (i in 1:20)
+{
+  epoch_x <- data.frame()
+  epoch_start = markers_left$tm[epoch_counter]
+  epoch_length = 10 # 10 secods
+  epoch_end = epoch_start + epoch_length
+  epoch_start_i = which(eeg_tempftd$t == epoch_start) 
+  epoch_end_i = epoch_start_i + samples
+  epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
+  epoch_x <- epoch_x$C3
+  epoch_x <- data.frame(epoch_x)
+  left_trial_signals <- cbind(left_trial_signals, epoch_x)
+  names(left_trial_signals)[epoch_counter] <- toString(epoch_counter)
+  epoch_counter = epoch_counter + 1
+}
+left_trials <- cbind(t_e, left_trial_signals)
+left_trials
+ggplot(left_trials)
+
+# All the RIGHT trials
+epoch_counter = 1
+right_trials <- data.frame()
+right_trials <- cbind(t_e)
+
+
 
 # Calculate Mu and Beta Band Power
 
