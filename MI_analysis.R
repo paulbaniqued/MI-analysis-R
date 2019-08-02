@@ -66,7 +66,7 @@ within(markers, levels(trigger)[levels(trigger) == "Trigger#1"] <- "1")
 markers$trigger = markers$trigger - 1
 markers
 
-markers_reduced <- dplyr::filter(markers, trigger > 0)
+markers_reduced <- dplyr::filter(markers, trigger > 0, tm >50) # tm>50 to select markers at session start 
 markers_reduced
 markers_left <- dplyr::filter(markers, trigger == 1)
 markers_left
@@ -88,13 +88,15 @@ ggplot(raw_eeg, aes(t, C3)) +
 
 # Spatial Filter
 
-# Channel Selection (Right Classes: C3, FC5, C1, CP5)
+# Channel Selection 
+# Right Classes: C3, FC5, C1, CP5
 eeg_oc1 <- raw_eeg %>% 
   select(C3, FC5, C1, CP5) %>% # Select left hemisphere channels; right hand trials
   mutate(C3 = C3*4 - FC5*1 - C1*1 - CP5*1) %>% # Coefficients: 4;-1;-1;-1
   select(C3) # Reduce dimensionality to 1 output channel
 eeg_oc1
 
+# Left Classes: C4, FC6, C2, CP6
 eeg_oc2 <- raw_eeg %>% 
   select(C4, FC6, C2, CP6) %>% # Select right hemisphere channels; left hand trials
   mutate(C4 = C4*4 - FC6*1 - C2*1 - CP6*1) %>% # Coefficients: 4;-1;-1;-1
@@ -106,8 +108,8 @@ eeg_spatialftd
 
 # Temporal Filter
 
-# Bandpass filter for u and B (8-24 Hz)
-eeg_tempftd <- eegfilter(eeg_spatialftd, Fs = 500, lower = 7.5, upper = 24.5, method = "butter",
+# Bandpass filter for Mu (8-12 Hz)
+eeg_tempftd <- eegfilter(eeg_spatialftd, Fs = 500, lower = 7.5, upper = 12.5, method = "butter",
           order = 4L, forwardreverse = TRUE, 
           scale = FALSE, plot = FALSE)
 eeg_tempftd <- data.frame(eeg_tempftd)
@@ -116,20 +118,31 @@ eeg_tempftd <- cbind(t = raw_eeg$t, eeg_tempftd)
 # Plot of band-pass filtered output channels
 
 ggplot() +
-  geom_vline(data = markers_reduced, aes(xintercept = tm, y = NULL, color = trigger, size = 0.5, alpha = 0.6), linetype = "dashed") +
+  geom_vline(data = markers_reduced, aes(xintercept = tm, y = NULL, color = trigger, alpha = 0.6, ), linetype = "dashed", show.legend = FALSE) +
   scale_color_manual(values=c("#00AFBB", "#E7B800"), name = "Trigger", labels = c("Left", "Right")) +
   geom_path(data = eeg_tempftd, aes(t,C4), colour="#E7B800", size=1.0) + # yellow, left
   geom_path(data = eeg_tempftd, aes(t,C3), colour="#00AFBB", size=1.1) + # blue, right
   ylim(-10, 10) +
   xlim(0, 500) + #whole data
-  xlim(206.5, 226.5) + #specific time
+  #xlim(206.5, 226.5) + #specific time
   theme_cowplot()
   
+# Before proceeding with Epoching Trials, we must first define which channel (C3laplacian, C4laplacian)
+# and which trials are we looking at:
+# LEFT TRIALS: (C4 Activity High, C3 Baseline)
+# RIGHT TRIALS: (C3 Activity Low, C4 Baseline)
+
+# Settings
+trial = "left"
+channel = "C4"
+
 # Time-based Epoching
+
+#Initialisation
 sampling_frequency = 500 #Hertz
 epoch_length = 10 #seconds
 samples = (sampling_frequency * epoch_length)
-t_e <- seq(from = 0.000, to = 10.000, length.out = 5001)
+t_e <- seq(from = 0.000, to = epoch_length, length.out = 5001)
 t_e <- round(t_e, digits = 3)
 t_e <- data.frame(t_e)
 
@@ -141,47 +154,144 @@ for (i in 1:20)
 {
   epoch_x <- data.frame()
   epoch_start = markers_left$tm[epoch_counter]
-  epoch_length = 10 # 10 secods
+  epoch_end = epoch_start + epoch_length
+  epoch_start_i = which(eeg_tempftd$t == epoch_start) 
+  epoch_end_i = epoch_start_i + samples
+  epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
+  epoch_x <- epoch_x$C4
+  epoch_x <- data.frame(epoch_x)
+  left_trial_signals <- cbind(left_trial_signals, epoch_x)
+  names(left_trial_signals)[epoch_counter] <- sprintf("Epoch_%s", epoch_counter)
+  epoch_counter = epoch_counter + 1
+}
+left_trials <- cbind(t_e, left_trial_signals)
+left_trials
+
+# Signal Averaging
+left_ave <- data.frame()
+left_ave <- rowMeans(left_trial_signals)
+left_ave <- data.frame(left_ave)
+left_ave <- cbind(t_e = left_trials$t_e, Ave = left_ave)
+
+# Visualise Spatial and Bandpass Filtered and Epoched Signals against Averaged Signals
+ggplot() +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.5, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_path(data = left_trials, aes(t_e,Epoch_1), colour="#E69F00", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_2), colour="#56B4E9", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_3), colour="#009E73", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_4), colour="#F0E442", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_5), colour="#0072B2", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_6), colour="#D55E00", size=0.5, alpha=0.4) +
+  geom_path(data = left_trials, aes(t_e,Epoch_7), colour="#CC79A7", size=0.5, alpha=0.4) +
+  geom_path(data = left_ave, aes(t_e, left_ave), colour="black", size=0.8, alpha=1) +
+  xlim(0, 10) +
+  ylim(-10, 10) +
+  xlab("seconds") + ylab("uV") + 
+  labs(title = "All Left Trials and Trial-Average", subtitle = "Spatially-filtered (Surface Laplacian), Bandpass-filtered (Mu 8-12 Hz), Epoch Length = 10s") +
+  theme_cowplot()
+  
+# Spectral Bandpower Estimation (Squaring)
+
+eeg_bp_left <- data.frame()
+eeg_bp_left <- (left_trial_signals)^2
+eeg_bp_left <- data.frame(eeg_bp_left)
+eeg_bp_left <- cbind(t_e = left_trials$t_e, eeg_bp_left)
+eeg_bp_left
+
+left_sqd_ave <- data.frame()
+left_sqd_ave <- rowMeans(eeg_bp_left)
+left_sqd_ave <- data.frame(left_sqd_ave)
+left_sqd_ave <- cbind(t_e = left_trials$t_e, Ave = left_sqd_ave)
+left_sqd_ave
+
+# Visualise Squared Signals (Spectral Bandpower)
+ggplot() +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.5, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_1), colour="#E69F00", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_2), colour="#56B4E9", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_3), colour="#009E73", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_4), colour="#F0E442", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_5), colour="#0072B2", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_6), colour="#D55E00", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_left, aes(t_e,Epoch_7), colour="#CC79A7", size=0.5, alpha=0.2) +
+  geom_path(data = left_sqd_ave, aes(t_e, left_sqd_ave), colour="black", size=0.8, alpha=1) +
+  xlim(0, 10) +
+  ylim(0, 50) +
+  xlab("seconds") + ylab("uV^2") + 
+  labs(title = expression(paste(mu, " Band Power in C4 Across All Left Trials")), subtitle = expression(paste("Spatially-filtered (Surface Laplacian), Bandpass-filtered (", mu, " 8-12 Hz), Epoch Length = 10s"))) +
+  theme_cowplot()
+
+# All the RIGHT trials
+epoch_counter = 1
+right_trials <- data.frame()
+right_trial_signals <- data.frame()[1:5001, ]
+for (i in 1:20)
+{
+  epoch_x <- data.frame()
+  epoch_start = markers_left$tm[epoch_counter]
   epoch_end = epoch_start + epoch_length
   epoch_start_i = which(eeg_tempftd$t == epoch_start) 
   epoch_end_i = epoch_start_i + samples
   epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
   epoch_x <- epoch_x$C3
   epoch_x <- data.frame(epoch_x)
-  left_trial_signals <- cbind(left_trial_signals, epoch_x)
-  names(left_trial_signals)[epoch_counter] <- toString(epoch_counter)
+  right_trial_signals <- cbind(right_trial_signals, epoch_x)
+  names(right_trial_signals)[epoch_counter] <- sprintf("Epoch_%s", epoch_counter)
   epoch_counter = epoch_counter + 1
 }
-left_trials <- cbind(t_e, left_trial_signals)
-left_trials
-ggplot(left_trials)
+right_trials <- cbind(t_e, left_trial_signals)
+right_trials
 
-# All the RIGHT trials
-epoch_counter = 1
-right_trials <- data.frame()
-right_trials <- cbind(t_e)
+# Signal Averaging
+right_ave <- data.frame()
+right_ave <- rowMeans(right_trial_signals)
+right_ave <- data.frame(right_ave)
+right_ave <- cbind(t_e = right_trials$t_e, Ave = right_ave)
 
+# Visualise Spatial and Bandpass Filtered and Epoched Signals against Averaged Signals
+ggplot() +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.5, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_path(data = right_trials, aes(t_e,Epoch_1), colour="#E69F00", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_2), colour="#56B4E9", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_3), colour="#009E73", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_4), colour="#F0E442", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_5), colour="#0072B2", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_6), colour="#D55E00", size=0.5, alpha=0.4) +
+  geom_path(data = right_trials, aes(t_e,Epoch_7), colour="#CC79A7", size=0.5, alpha=0.4) +
+  geom_path(data = right_ave, aes(t_e,right_ave), colour="black", size=0.8, alpha=1) +
+  xlim(0, 10) +
+  ylim(-10, 10) +
+  xlab("seconds") + ylab("uV") + 
+  labs(title = "All Right Trials and Trial-Average", subtitle = "Spatially-filtered (Surface Laplacian), Bandpass-filtered (Mu 8-12 Hz), Epoch Length = 10s") +
+  theme_cowplot()
 
+# Spectral Bandpower Estimation (Squaring)
 
-# Calculate Mu and Beta Band Power
+eeg_bp_right <- data.frame()
+eeg_bp_right <- (right_trial_signals)^2
+eeg_bp_right <- data.frame(eeg_bp_right)
+eeg_bp_right <- cbind(t_e = right_trials$t_e, eeg_bp_right)
+eeg_bp_right
 
-# # Power Spectral Density Function
-# eeg_psd <- eegpsd(raw_eeg, 500, lower = 0, upper = 60, units = "dB")
-# eegpsd
+right_sqd_ave <- data.frame()
+right_sqd_ave <- rowMeans(eeg_bp_right)
+right_sqd_ave <- data.frame(right_sqd_ave)
+right_sqd_ave <- cbind(t_e = right_trials$t_e, Ave = right_sqd_ave)
+right_sqd_ave
 
-# # Signal Squaring and Log Function
-# eeg_bp <- eeg_tempftd^2
-# eeg_bp <- log(1+eeg_bp)
-# eeg_bp <- cbind(t = raw_eeg$t, C3 = eeg_bp$C3, C4 = eeg_bp$C4)
-# eeg_bp <- data.frame(eeg_bp)
-# eeg_bp
-
-# ggplot() +
-#   geom_vline(data = markers_reduced, aes(xintercept = tm, y = NULL, color = trigger, size = 0.5, alpha = 0.6), linetype = "dashed") +
-#   scale_color_manual(values=c("#00AFBB", "#E7B800"), name = "Trigger", labels = c("Left", "Right")) +
-#   geom_path(data = eeg_bp, aes(t,C4), colour="#E7B800", size=1.0) + # yellow, left
-#   geom_path(data = eeg_bp, aes(t,C3), colour="#00AFBB", size=1.1) + # blue, right
-#   ylim(-10, 10) +
-#   xlim(0, 500) + #whole data
-#   xlim(206.5, 207.5) + #specific time
-#   theme_cowplot()
+# Visualise Squared Signals (Spectral Bandpower)
+ggplot() +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.5, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_1), colour="#E69F00", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_2), colour="#56B4E9", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_3), colour="#009E73", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_4), colour="#F0E442", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_5), colour="#0072B2", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_6), colour="#D55E00", size=0.5, alpha=0.2) +
+  geom_path(data = eeg_bp_right, aes(t_e,Epoch_7), colour="#CC79A7", size=0.5, alpha=0.2) +
+  geom_path(data = right_sqd_ave, aes(t_e, right_sqd_ave), colour="black", size=0.8, alpha=1) +
+  xlim(0, 10) +
+  ylim(0, 50) +
+  xlab("seconds") + ylab("uV^2") + 
+  labs(title = expression(paste(mu, " Band Power in C3 Across All Left Trials")), subtitle = expression(paste("Spatially-filtered (Surface Laplacian), Bandpass-filtered (", mu, " 8-12 Hz), Epoch Length = 10s"))) +
+  theme_cowplot()
