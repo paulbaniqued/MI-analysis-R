@@ -8,7 +8,7 @@ library(eegUtils)
 library(eegkit)
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190726151358_P05_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/Paul/20200120132134_20200120 Paul Integration Test_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 # construct main data frame for EEG anaylsis
@@ -67,11 +67,11 @@ within(markers, levels(trigger)[levels(trigger) == "Trigger#1"] <- "1")
 markers$trigger = markers$trigger - 1
 markers
 
-markers_reduced <- dplyr::filter(markers, trigger > 0, tm >50) # tm>50 to select markers at session start 
+markers_reduced <- dplyr::filter(markers, trigger > 2 & trigger < 5, tm >30) # tm>50 to select markers at session start 
 markers_reduced
-markers_left <- dplyr::filter(markers_reduced, trigger == 1)
+markers_left <- dplyr::filter(markers_reduced, trigger == 3)
 markers_left
-markers_right <- dplyr::filter(markers_reduced, trigger == 2)
+markers_right <- dplyr::filter(markers_reduced, trigger == 4)
 markers_right
 markers_reduced$trigger <- as.factor(markers_reduced$trigger)
 
