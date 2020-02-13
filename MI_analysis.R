@@ -8,7 +8,7 @@ library(eegUtils)
 library(eegkit)
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/Paul/20200120132134_20200120 Paul Integration Test_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/Paul/20200211140906_cs544ti_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 # construct main data frame for EEG anaylsis
@@ -134,10 +134,10 @@ ggplot() +
 # RIGHT TRIALS: (C3 Activity Low, C4 Baseline)
 
 # Settings: Change this
-trial_name = "Left"
-trial_markers = markers_left
-channel1 = "C4"
-channel2 = "C3"
+trial_name = "Right"
+trial_markers = markers_right
+channel1 = "C3"
+channel2 = "C4"
 
 # Time-based Epoching
 
@@ -158,7 +158,7 @@ for (i in 1:20) #Primary Channel of Interest
   epoch_x <- data.frame()
   epoch_start = trial_markers$tm[epoch_counter]-2 # -- change trial in settings
   epoch_end = epoch_start + epoch_length
-  epoch_start_i = which(eeg_tempftd$t == epoch_start) 
+  epoch_start_i = which(round(eeg_tempftd$t, 3) == round(epoch_start, 3))
   epoch_end_i = epoch_start_i + samples
   epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
   epoch_x <- epoch_x$C3                             # -- CHANGE MANUALLY
@@ -176,10 +176,10 @@ for (i in 1:20) #Secondary Channel (non-interest)
   epoch_x <- data.frame()
   epoch_start = trial_markers$tm[epoch_counter]-2 # -- change trial in settings
   epoch_end = epoch_start + epoch_length
-  epoch_start_i = which(eeg_tempftd$t == epoch_start) 
+  epoch_start_i = which(round(eeg_tempftd$t, 3) == round(epoch_start, 3)) # 3 decimal places
   epoch_end_i = epoch_start_i + samples
   epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
-  epoch_x <- epoch_x$C4                             # -- CHANGE MANUALLY
+  epoch_x <- epoch_x$C4                            # -- CHANGE MANUALLY
   epoch_x <- data.frame(epoch_x)
   all_trial_signals2 <- cbind(all_trial_signals2, epoch_x)
   names(all_trial_signals2)[epoch_counter] <- sprintf("%s_Epoch_%s", channel2, epoch_counter)
