@@ -7,19 +7,19 @@ library(cowplot)
 library(eegUtils)
 library(eegkit)
 
-cum_erds_1 <- data.frame()
-cum_erds_1 <- cbind(t_epoch_t)
-cum_erds_2 <- data.frame()
-cum_erds_2 <- cbind(t_epoch_t)
+cum_erds_1 <- data.frame(erd_pct1)
+cum_erds_2 <- data.frame(erd_pct2)
 
 
 
 
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/Paul/20200226102447_jw507cl_Stream.edf", read.annotations = TRUE, header.only = FALSE)
-import_eeg <- read.edf("C:/Users/Paul/20200225101122_jw507cl_Stream.edf", read.annotations = TRUE, header.only = FALSE)
-import_eeg <- read.edf("C:/Users/Paul/20200226091931_jr650su_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/20200217151750_rh998ce_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/20200218100814_dd399he_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/20200221125938_nk446we_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/20200225101122_jw507cl_Stream.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/20200226091931_jr650su_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 
 # construct main data frame for EEG anaylsis
@@ -327,7 +327,36 @@ ggplot() +
   scale_colour_manual(name="Legend", values=c("#E7B800", "#00AFBB")) +
   theme_cowplot(12)
 
-
+erd_pct1 <- data.frame(erd_pct1)
+erd_pct2 <- data.frame(erd_pct2)
 cum_erds_1 <- cbind(cum_erds_1, erd_pct1)
 cum_erds_2 <- cbind(cum_erds_2, erd_pct2)
+
+
+
+
+
+
+# All participants averaging
+N_ave1 <- data.frame()
+N_ave1 <- rowMeans(cum_erds_1)
+N_ave1 <- data.frame(N_ave1)
+
+N_ave2 <- data.frame()
+N_ave2 <- rowMeans(cum_erds_2)
+N_ave2 <- data.frame(N_ave2)
+
+N_ave <- data.frame()
+N_ave <- cbind(t_epoch_t, N_ave1, N_ave2)
+
+ggplot() +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.5, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_smooth(data = N_ave, aes(t_epoch_t, N_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
+  geom_smooth(data = erd_pct, aes(t_epoch_t, N_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
+  xlim(-2, 8) +
+  ylim(-120, 50) +
+  xlab("seconds") + ylab("%ERD/ERS") + 
+  labs(title = sprintf("Percent Change in ERD/ERS of %s and %s Across All Participants", channel1, channel2), subtitle = expression(paste("Relative ", mu, " Power at 8-12 Hz, (B-S)/B x100"))) +
+  scale_colour_manual(name="Legend", values=c("#E7B800", "#00AFBB")) +
+  theme_cowplot(12)
 
