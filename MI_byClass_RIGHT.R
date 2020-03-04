@@ -375,12 +375,12 @@ ggplot() +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
   scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
-  ylim(-150, 150) +
+  ylim(-200, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS
   xlab("seconds") + ylab("%ERD/ERS") + 
-  annotate("text", x = -4.75, y = -140, label = "Rest") +
-  annotate("text", x = -1.75, y = -140, label = "Baseline") +
-  annotate("text", x = 3.25, y = -140, label = "Trial") +
-  annotate("text", x = 7.75, y = -140, label = "Rest") +
+  annotate("text", x = -4.75, y = -190, label = "Rest") +
+  annotate("text", x = -1.75, y = -190, label = "Baseline") +
+  annotate("text", x = 3.25, y = -190, label = "Trial") +
+  annotate("text", x = 7.75, y = -190, label = "Rest") +
   labs(title = sprintf("Percent Change in ERD/ERS of %s and %s Across All %s Trials", channel1, channel2, trial_name), subtitle = expression(paste("Relative ", mu, " Power at 9-11 Hz, (S-B)/B x100"))) +
   scale_colour_manual(name="Legend", values=c("#00afbb", "#e7b800")) +
   theme_cowplot(12)
