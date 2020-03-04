@@ -9,7 +9,7 @@ library(eegkit)
 library(Rmisc)
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/mnpdeb/tl354ha_1.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/Paul/20200217151750_rh998ce_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 # construct main data frame for EEG anaylsis
@@ -364,20 +364,25 @@ CI_2_lower <- CI_2[3,]
 sqd_ave2 <- cbind(t_epoch_t, sqd_ave2, sd2, sem2, CI_2_upper, CI_2_lower)
 
 ggplot() +
-  geom_vline(aes(xintercept = 0, y = NULL, size = 0.25, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_rect(aes(xmin = -6, xmax = -3.5, ymin = -Inf, ymax = Inf), fill = 'red', alpha = 0.20) +
-  geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'red', alpha = 0.20) +
-  geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'orange', alpha = 0.20) +
-  geom_rect(aes(xmin = 0, xmax = 6.5, ymin = -Inf, ymax = Inf), fill = 'green', alpha = 0.20) +
-  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="blue", alpha=0.2) +
-  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="yellow", alpha=0.2) +
+  geom_rect(aes(xmin = -6, xmax = -3.5, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
+  geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
+  geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.20) +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.20, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_vline(aes(xintercept = -3.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_vline(aes(xintercept = 6.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="#e7b800", alpha=0.4) +
+  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="#00afbb", alpha=0.4) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
-  xlim(-6, 9) +
-  ylim(-100, 100) +
+  scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
+  ylim(-150, 150) +
   xlab("seconds") + ylab("%ERD/ERS") + 
+  annotate("text", x = -4.75, y = -140, label = "Rest") +
+  annotate("text", x = -1.75, y = -140, label = "Baseline") +
+  annotate("text", x = 3.25, y = -140, label = "Trial") +
+  annotate("text", x = 7.75, y = -140, label = "Rest") +
   labs(title = sprintf("Percent Change in ERD/ERS of %s and %s Across All %s Trials", channel1, channel2, trial_name), subtitle = expression(paste("Relative ", mu, " Power at 9-11 Hz, (S-B)/B x100"))) +
-  scale_colour_manual(name="Legend", values=c("#E7B800", "#00AFBB")) +
+  scale_colour_manual(name="Legend", values=c("#00afbb", "#e7b800")) +
   theme_cowplot(12)
 
 
