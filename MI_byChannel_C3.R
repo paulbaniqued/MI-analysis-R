@@ -372,8 +372,8 @@ ggplot() +
   geom_vline(aes(xintercept = 0, y = NULL, size = 0.20, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
   geom_vline(aes(xintercept = -3.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
   geom_vline(aes(xintercept = 6.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="#00afbb", alpha=0.4) +
-  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="#e7b800", alpha=0.4) +
+  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="#7cae00", alpha=0.4) +
+  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="#c77cff", alpha=0.4) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
   scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
@@ -384,6 +384,6 @@ ggplot() +
   annotate("text", x = 3.25, y = -190, label = "Trial") +
   annotate("text", x = 7.75, y = -190, label = "Rest") +
   labs(title = sprintf("Percent Change in ERD/ERS of %s for %s and %s Trials", channel_name, channel1, channel2), subtitle = expression(paste("Relative ", mu, " Power at 9-11 Hz, (S-B)/B x100"))) +
-  scale_colour_manual(name="Legend", values=c("#00afbb", "#e7b800")) +
+  scale_colour_manual(name="Legend", values=c("#7cae00", "#c77cff")) +
   theme_cowplot(12)
 
