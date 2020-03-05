@@ -9,7 +9,7 @@ library(eegkit)
 library(Rmisc)
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/Paul/EDF files/1_s1.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/EDF/6_s4.edf", read.annotations = TRUE, header.only = FALSE)
 #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 # construct main data frame for EEG anaylsis
@@ -114,8 +114,8 @@ eeg_spatialftd
 
 # Bandpass filter for Mu (8-12 Hz)
 eeg_tempftd <- eegfilter(eeg_spatialftd, Fs = 500, lower = 8.5, upper = 11.5, method = "butter",
-          order = 4, forwardreverse = TRUE, 
-          scale = FALSE, plot = FALSE)
+                         order = 4, forwardreverse = TRUE, 
+                         scale = FALSE, plot = FALSE)
 eeg_tempftd <- data.frame(eeg_tempftd)
 eeg_tempftd <- cbind(t = raw_eeg$t, eeg_tempftd)
 
@@ -130,17 +130,18 @@ eeg_tempftd <- cbind(t = raw_eeg$t, eeg_tempftd)
 #   #xlim(0, 500) + #whole data
 #   xlim(206.5, 226.5) + #specific time
 #   theme_cowplot()
-  
+
 # Before proceeding with Epoching Trials, we must first define which channel (C3laplacian, C4laplacian)
 # and which trials are we looking at:
 # LEFT TRIALS: (C4 Activity High, C3 Baseline)
 # RIGHT TRIALS: (C3 Activity Low, C4 Baseline)
 
 # Settings: Change this
-trial_name = "Left"
-trial_markers = markers_left
-channel1 = "C4"
-channel2 = "C3"
+channel_name = "C4"
+trial_markers_1 = markers_left
+trial_markers_2 = markers_right
+channel1 = "Left"
+channel2 = "Right"
 
 # Time-based Epoching
 
@@ -156,10 +157,10 @@ t_e <- data.frame(t_e)
 epoch_counter = 1
 all_trial_signals1 <- data.frame()[1:7501, ]
 
-for (i in 1:20) #Primary Channel of Interest
+for (i in 1:20) #Primary Class of Interest
 {
   epoch_x <- data.frame()
-  epoch_start = trial_markers$tm[epoch_counter]-6 # -- change trial in settings
+  epoch_start = trial_markers_1$tm[epoch_counter]-6 # -- change trial in settings
   epoch_end = epoch_start + epoch_length
   epoch_start_i = which(round(eeg_tempftd$t, 3) == round(epoch_start, 3))
   epoch_end_i = epoch_start_i + samples
@@ -174,15 +175,15 @@ for (i in 1:20) #Primary Channel of Interest
 epoch_counter = 1
 all_trial_signals2 <- data.frame()[1:7501, ]
 
-for (i in 1:20) #Secondary Channel (non-interest)
+for (i in 1:20) #Secondary Class (non-interest)
 {
   epoch_x <- data.frame()
-  epoch_start = trial_markers$tm[epoch_counter]-6 # -- change trial in settings
+  epoch_start = trial_markers_2$tm[epoch_counter]-6 # -- change trial in settings
   epoch_end = epoch_start + epoch_length
   epoch_start_i = which(round(eeg_tempftd$t, 3) == round(epoch_start, 3)) # 3 decimal places
   epoch_end_i = epoch_start_i + samples
   epoch_x <- eeg_tempftd[epoch_start_i:epoch_end_i,]
-  epoch_x <- epoch_x$C3                            # -- CHANGE MANUALLY
+  epoch_x <- epoch_x$C4                            # -- CHANGE MANUALLY
   epoch_x <- data.frame(epoch_x)
   all_trial_signals2 <- cbind(all_trial_signals2, epoch_x)
   names(all_trial_signals2)[epoch_counter] <- sprintf("%s_Epoch_%s", channel2, epoch_counter)
@@ -227,7 +228,7 @@ all_ave2 <- cbind(t_e = all_trials$t_e, Ave = all_ave2)
 #   xlab("seconds") + ylab("uV") + 
 #   labs(title = sprintf("%s: All %s Trials and Trial Average", channel1, trial_name), subtitle = "Bandpass-filtered (Mu 9-11 Hz), Epoch Length = 15s") +
 #   theme_cowplot(12)
-  
+
 # Spectral Bandpower Estimation (Squaring)
 
 eeg_bp1 <- data.frame()
@@ -371,8 +372,8 @@ ggplot() +
   geom_vline(aes(xintercept = 0, y = NULL, size = 0.20, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
   geom_vline(aes(xintercept = -3.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
   geom_vline(aes(xintercept = 6.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="#00afbb", alpha=0.4) +
-  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="#e7b800", alpha=0.4) +
+  geom_ribbon(data = sqd_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="#7cae00", alpha=0.4) +
+  geom_ribbon(data = sqd_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="#c77cff", alpha=0.4) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
   geom_smooth(data = sqd_ave_t, aes(t_epoch_t, sqd_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
   scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
@@ -382,8 +383,7 @@ ggplot() +
   annotate("text", x = -1.75, y = -190, label = "Baseline") +
   annotate("text", x = 3.25, y = -190, label = "Trial") +
   annotate("text", x = 7.75, y = -190, label = "Rest") +
-  labs(title = sprintf("Percent Change in ERD/ERS of %s and %s Across All %s Trials", channel1, channel2, trial_name), subtitle = expression(paste("Relative ", mu, " Power at 9-11 Hz, (S-B)/B x100"))) +
-  scale_colour_manual(name="Legend", values=c("#00afbb", "#e7b800")) +
+  labs(title = sprintf("Percent Change in ERD/ERS of %s for %s and %s Trials", channel_name, channel1, channel2), subtitle = expression(paste("Relative ", mu, " Power at 9-11 Hz, (S-B)/B x100"))) +
+  scale_colour_manual(name="Legend", values=c("#c77cff", "#7cae00")) +
   theme_cowplot(12)
-
 
