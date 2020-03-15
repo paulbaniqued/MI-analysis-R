@@ -376,3 +376,22 @@ erds.plot +
   scale_fill_manual(name="Legend", values=c("purple3", "forestgreen")) +
   theme_cowplot(12)
 
+# Mass univariate T-Tests (c/o Matt Craddock)
+runningT <- data.frame()[1:100,]
+pvals <- data.frame()[1:100,]
+rT_counter = 1
+
+for (i in 1:100)
+{
+  t_x = cum_erds_1[rT_counter,]
+  t_y = cum_erds_2[rT_counter,]
+  ttest = t.test(t_x,t_y)
+  runningT <- rbind(runningT, ttest$statistic)
+  pvals <- rbind(pvals, ttest$p.value)
+  rT_counter = rT_counter + 1
+}
+
+pvals <- cbind(t_epoch_t, pvals)
+names(pvals)[2] <- "pval"
+pval.plot <- ggplot(data = pvals, aes(t_epoch_t, pval)) + geom_point()
+pval.plot
