@@ -4,18 +4,39 @@ library(edf)
 library(ggplot2)
 library(dplyr)
 library(cowplot)
-#library(eegUtils)
 library(eegkit)
 library(Rmisc)
 
+# Set empty data frame
 cum_erds_1 <- data.frame()[1:100,]
 cum_erds_2 <- data.frame()[1:100,]
 
+erds.plot <- ggplot() +
+  geom_rect(aes(xmin = -6, xmax = -3.5, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
+  geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
+  geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.20) +
+  geom_vline(aes(xintercept = 0, y = NULL, size = 0.20, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_vline(aes(xintercept = -3.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  geom_vline(aes(xintercept = 6.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+  scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
+  ylim(-100, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS
+  xlab("seconds") + ylab("%ERD/ERS") +
+  annotate("text", x = -4.75, y = -90, label = "Rest") +
+  annotate("text", x = -1.75, y = -90, label = "Baseline") +
+  annotate("text", x = 3.25, y = -90, label = "Trial") +
+  annotate("text", x = 7.75, y = -90, label = "Rest") +
+  theme_cowplot(12)
+
+erds.plot
+
 # Load data
 
-folder_dir = "D:/Paul/EDF Files/"
+#folder_dir = "C:/Users/Paul/EDF Files/"                      # LG.29 PC
+folder_dir = "C:/Users/mnpdeb/AOMI_EDF/"                      # Ada Laptop
 
-for (i in 1:10)                                  # Change to get number of files/sessions
+files_no <- readline(prompt = "How many files? ")
+
+for (i in 1:files_no)                                
 {
   # Start here
   p_code <- readline(prompt = "Enter participant number (e.g. 1): ")
@@ -23,10 +44,6 @@ for (i in 1:10)                                  # Change to get number of files
   
   filename <- paste(folder_dir, p_code, "_s", day, ".edf", sep = "")
 
-  # import EDF reader package and read .EDF file in the directory
-  #import_eeg <- read.edf("C:/Users/Paul/20200217151750_rh998ce_Stream.edf", read.annotations = TRUE, header.only = FALSE)
-  #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
-  
   import_eeg <- read.edf(filename, read.annotations = TRUE, header.only = FALSE)
   
   # construct main data frame for EEG anaylsis
@@ -119,27 +136,24 @@ for (i in 1:10)                                  # Change to get number of files
   eeg_spatialftd <- cbind(eeg_oc1, eeg_oc2)
   eeg_spatialftd
   
+  
+  # SEPARATING TWO DIFFERENT CONDITIONS
+  # Settings: Change this
+  channel_name = "C4"
+  trial_markers_1 = markers_right
+  trial_markers_2 = markers_left
+  channel1 = "Right"
+  channel2 = "Left"
+  
   # Temporal Filter
   
-  # Bandpass filter for Mu (8-12 Hz)
+  # Bandpass filter for Mu (9-11 Hz)
   eeg_tempftd <- eegfilter(eeg_spatialftd, Fs = 500, lower = 8.5, upper = 11.5, method = "butter",
                            order = 4, forwardreverse = TRUE, 
                            scale = FALSE, plot = FALSE)
   eeg_tempftd <- data.frame(eeg_tempftd)
   eeg_tempftd <- cbind(t = raw_eeg$t, eeg_tempftd)
 
-  
-  # Before proceeding with Epoching Trials, we must first define which channel (C3laplacian, C4laplacian)
-  # and which trials are we looking at:
-  # LEFT TRIALS: (C4 Activity High, C3 Baseline)
-  # RIGHT TRIALS: (C3 Activity Low, C4 Baseline)
-  
-  # Settings: Change this
-  channel_name = "C4"
-  trial_markers_1 = markers_left
-  trial_markers_2 = markers_right
-  channel1 = "Left"
-  channel2 = "Right"
   
   # Time-based Epoching
   
@@ -312,6 +326,14 @@ for (i in 1:10)                                  # Change to get number of files
   sqd_ave2 <- data.frame(sqd_ave2)
   cum_erds_2 <- cbind(cum_erds_2, sqd_ave2)
   
+  # Plot individual plots
+  indplot <- cbind(t_epoch_t, sqd_ave1, sqd_ave2)
+  erds.plot <- erds.plot + 
+    geom_path(data = indplot, aes(t_epoch_t, sqd_ave2, colour=channel2), size= 1, span = 0.1, alpha=0.5) +
+    geom_path(data = indplot, aes(t_epoch_t, sqd_ave1, colour=channel1), size= 1, span = 0.1, alpha=0.5) +
+    scale_colour_manual(name="Legend", values=c("purple3", "forestgreen"))
+  print(erds.plot)
+
 }
 
 cum_ave1 <- data.frame()
@@ -343,26 +365,14 @@ CI_2_upper <- CI_2[1,]
 CI_2_lower <- CI_2[3,]
 cum_ave2 <- cbind(t_epoch_t, cum_ave2, sd2, sem2, CI_2_upper, CI_2_lower)
 
-ggplot() +
-  geom_rect(aes(xmin = -6, xmax = -3.5, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
-  geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
-  geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.20) +
-  geom_vline(aes(xintercept = 0, y = NULL, size = 0.20, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_vline(aes(xintercept = -3.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_vline(aes(xintercept = 6.5, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-  geom_ribbon(data = cum_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper), fill="purple3", alpha=0.4) +
-  geom_ribbon(data = cum_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper), fill="forestgreen", alpha=0.4) +
-  geom_smooth(data = sqd_ave_t, aes(t_epoch_t, cum_ave2, colour=channel2), size= 1.5, alpha=0.0, span = 0.1) +
-  geom_smooth(data = sqd_ave_t, aes(t_epoch_t, cum_ave1, colour=channel1), size= 1.5, alpha=0.0, span = 0.1) +
-  scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
-  ylim(-100, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS
-  xlab("seconds") + ylab("%ERD/ERS") +
-  annotate("text", x = -4.75, y = -90, label = "Rest") +
-  annotate("text", x = -1.75, y = -90, label = "Baseline") +
-  annotate("text", x = 3.25, y = -90, label = "Trial") +
-  annotate("text", x = 7.75, y = -90, label = "Rest") +
+erds.plot + 
+  geom_ribbon(data = cum_ave2, aes(t_epoch_t, ymin=CI_2_lower, ymax=CI_2_upper, fill=channel2), alpha=0.3) +
+  geom_ribbon(data = cum_ave1, aes(t_epoch_t, ymin=CI_1_lower, ymax=CI_1_upper, fill=channel1), alpha=0.3) +
+  geom_smooth(data = sqd_ave_t, aes(t_epoch_t, cum_ave2, colour=channel2), size= 1.5, span = 0.1) +
+  geom_smooth(data = sqd_ave_t, aes(t_epoch_t, cum_ave1, colour=channel1), size= 1.5, span = 0.1) +
+  ylim(-100, 100) +
   labs(title = sprintf("Grand Average of ERD/ERS in %s Across All Participants' %s and %s Trials",  channel_name, channel1, channel2), subtitle = expression(paste("Relative ", mu, " Power % Change at 9-11 Hz, (S-B)/B x100"))) +
-  scale_colour_manual(name="Legend", values=c("purple3", "forestgreen"))
+  scale_colour_manual(name="Legend", values=c("purple3", "forestgreen")) +
+  scale_fill_manual(name="Legend", values=c("purple3", "forestgreen")) +
   theme_cowplot(12)
-
 
