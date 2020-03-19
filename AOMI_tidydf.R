@@ -95,10 +95,10 @@ for (i in 1:files_no)
   
   #Initialisation
   sampling_frequency = 100 #Hertz
-  epoch_length = 12.5 #seconds
+  epoch_length = 15 #seconds
   samples = (sampling_frequency * epoch_length)
   epoch_samples = samples + 1
-  Time <- seq(from = -3.500, to = epoch_length, length.out = epoch_samples)
+  Time <- seq(from = -6.000, to = -6.000 +epoch_length, length.out = epoch_samples)
   Time <- round(Time, digits = 3)
   Time <- data.frame(Time)
   
@@ -117,7 +117,7 @@ for (i in 1:files_no)
   for (i in 1:20)
   {
     epoch_x <- data.frame()
-    epoch_start = markers_left$tm[epoch_counter]-3.5 # -- change trial in settings
+    epoch_start = markers_left$tm[epoch_counter]-6 # -- change trial in settings
     epoch_end = epoch_start + epoch_length
     epoch_start_i = which(round(raw_eeg$Timestamp, 2) == round(epoch_start, 2))
     epoch_end_i = epoch_start_i + samples
@@ -138,7 +138,7 @@ for (i in 1:files_no)
   for (i in 1:20) 
   {
     epoch_x <- data.frame()
-    epoch_start = markers_right$tm[epoch_counter]-3.5 # -- change trial in settings
+    epoch_start = markers_right$tm[epoch_counter]-6 # -- change trial in settings
     epoch_end = epoch_start + epoch_length
     epoch_start_i = which(round(raw_eeg$Timestamp, 2) == round(epoch_start, 2))
     epoch_end_i = epoch_start_i + samples
@@ -155,4 +155,5 @@ for (i in 1:files_no)
 }
 
 # Save EEG data per participant as CSV file
-write.table(aomi_tidy, file = "AOMI_1.csv", sep = ",", row.names = FALSE)
+write.table(aomi_tidy, file = "AOMI_1b.csv", sep = ",", row.names = FALSE)
+
