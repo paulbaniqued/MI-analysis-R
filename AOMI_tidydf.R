@@ -27,43 +27,39 @@ for (i in 1:17)
     # construct main data frame for EEG anaylsis
     raw_eeg <- data.frame()
     
-    # DOWNSAMPLING by factor of 5 decimation (500 Hz to 100 Hz) 
-    # default order 8 Chebyshev type I filter is used or a 30-point FIR filter if ftype is 'fir'
-    byfactor = 1
-    
-    timestamp = data.frame(decimate(import_eeg$signal$C3$t, byfactor))
-    raw_eeg <- cbind(timestamp)
+    t = data.frame(import_eeg$signal$C3$t)
+    raw_eeg <- cbind(t)
     names(raw_eeg)[1] <- "Timestamp"
     
-    C3 = data.frame(decimate(import_eeg$signal$C3$data, byfactor, ftype = "fir"))
+    C3 = data.frame(import_eeg$signal$C3$data)
     raw_eeg <- cbind(raw_eeg, C3)
     names(raw_eeg)[2] <- "C3"
     
-    C4 = data.frame(decimate(import_eeg$signal$C4$data, byfactor, ftype = "fir"))
+    C4 = data.frame(import_eeg$signal$C4$data)
     raw_eeg <- cbind(raw_eeg, C4)
     names(raw_eeg)[3] <- "C4"
     
-    CP5 = data.frame(decimate(import_eeg$signal$CP5$data, byfactor, ftype = "fir"))
+    CP5 = data.frame(import_eeg$signal$CP5$data)
     raw_eeg <- cbind(raw_eeg, CP5)
     names(raw_eeg)[4] <- "CP5"
     
-    CP6 = data.frame(decimate(import_eeg$signal$CP6$data, byfactor, ftype = "fir"))
+    CP6 = data.frame(import_eeg$signal$CP6$data)
     raw_eeg <- cbind(raw_eeg, CP6)
     names(raw_eeg)[5] <- "CP6"
     
-    C1 = data.frame(decimate(import_eeg$signal$C1$data, byfactor, ftype = "fir"))
+    C1 = data.frame(import_eeg$signal$C1$data)
     raw_eeg <- cbind(raw_eeg, C1)
     names(raw_eeg)[6] <- "C1"
     
-    C2 = data.frame(decimate(import_eeg$signal$C2$data, byfactor, ftype = "fir"))
+    C2 = data.frame(import_eeg$signal$C2$data)
     raw_eeg <- cbind(raw_eeg, C2)
     names(raw_eeg)[7] <- "C2"
     
-    FC5 = data.frame(decimate(import_eeg$signal$FC5$data, byfactor, ftype = "fir"))
+    FC5 = data.frame(import_eeg$signal$FC5$data)
     raw_eeg <- cbind(raw_eeg, FC5)
     names(raw_eeg)[8] <- "FC5"
     
-    FC6 = data.frame(decimate(import_eeg$signal$FC6$data, byfactor, ftype = "fir"))
+    FC6 = data.frame(import_eeg$signal$FC6$data)
     raw_eeg <- cbind(raw_eeg, FC6)
     names(raw_eeg)[9] <- "FC6"
     
@@ -100,7 +96,7 @@ for (i in 1:17)
     epoch_length = 15 #seconds
     samples = (sampling_frequency * epoch_length)
     epoch_samples = samples + 1
-    Time <- seq(from = -6.000, to = -6.000 +epoch_length, length.out = epoch_samples)
+    Time <- seq(from = -6.000, to = -6.000+epoch_length, length.out = epoch_samples)
     Time <- round(Time, digits = 3)
     Time <- data.frame(Time)
     
@@ -112,7 +108,7 @@ for (i in 1:17)
     names(sesh)[1] <- "Session"
     
     # LEFT TRIALS
-    class <- data.frame(list(rep("left", epoch_samples)))
+    class <- data.frame(list(rep("Left", epoch_samples)))
     names(class)[1] <- "Class"
     epoch_counter = 1
     
@@ -121,7 +117,7 @@ for (i in 1:17)
       epoch_x <- data.frame()
       epoch_start = markers_left$tm[epoch_counter]-6 # -- change trial in settings
       epoch_end = epoch_start + epoch_length
-      epoch_start_i = which(round(raw_eeg$Timestamp, 2) == round(epoch_start, 2))
+      epoch_start_i = which(round(raw_eeg$Timestamp, 3) == round(epoch_start, 3))
       epoch_end_i = epoch_start_i + samples
       trial_no <- data.frame(list(rep(as.numeric(epoch_counter), epoch_samples)))
       names(trial_no)[1] <- "Trial"
@@ -133,7 +129,7 @@ for (i in 1:17)
     }
     
     # RIGHT TRIALS
-    class <- data.frame(list(rep("right", epoch_samples)))
+    class <- data.frame(list(rep("Right", epoch_samples)))
     names(class)[1] <- "Class"
     epoch_counter = 1
     
