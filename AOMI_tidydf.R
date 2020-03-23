@@ -93,11 +93,10 @@ for (i in 1:17)
     
     #Initialisation
     sampling_frequency = 500 #Hertz
-    epoch_length = 12.5 #seconds
+    epoch_length = 12.4 #seconds
     epoch_starting = -3.5 # at which point?
     
-    samples = (sampling_frequency * epoch_length)
-    epoch_samples = samples+1
+    epoch_samples = (sampling_frequency * epoch_length)
     Time <- seq(from = epoch_starting, to = epoch_starting+epoch_length, length.out = epoch_samples)
     Time <- round(Time, digits = 3)
     Time <- data.frame(Time)
@@ -120,7 +119,7 @@ for (i in 1:17)
       epoch_start = markers_left$tm[epoch_counter]+epoch_starting # -- change trial in settings
       epoch_end = epoch_start + epoch_length
       epoch_start_i = which(round(raw_eeg$Timestamp, 3) == round(epoch_start, 3))
-      epoch_end_i = epoch_start_i + samples
+      epoch_end_i = epoch_start_i + epoch_samples-1
       trial_no <- data.frame(list(rep(as.numeric(epoch_counter), epoch_samples)))
       names(trial_no)[1] <- "Trial"
       epoch_x <- raw_eeg[epoch_start_i:epoch_end_i,]
@@ -141,7 +140,7 @@ for (i in 1:17)
       epoch_start = markers_right$tm[epoch_counter]+epoch_starting # -- change trial in settings
       epoch_end = epoch_start + epoch_length
       epoch_start_i = which(round(raw_eeg$Timestamp, 3) == round(epoch_start, 3))
-      epoch_end_i = epoch_start_i + samples
+      epoch_end_i = epoch_start_i + epoch_samples-1
       trial_no <- data.frame(list(rep(as.numeric(epoch_counter), epoch_samples)))
       names(trial_no)[1] <- "Trial"
       epoch_x <- raw_eeg[epoch_start_i:epoch_end_i,]
