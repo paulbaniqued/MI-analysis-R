@@ -93,10 +93,12 @@ for (i in 1:17)
     
     #Initialisation
     sampling_frequency = 500 #Hertz
-    epoch_length = 15 #seconds
+    epoch_length = 12.5 #seconds
+    epoch_starting = -3.5 # at which point?
+    
     samples = (sampling_frequency * epoch_length)
-    epoch_samples = samples + 1
-    Time <- seq(from = -6.000, to = -6.000+epoch_length, length.out = epoch_samples)
+    epoch_samples = samples+1
+    Time <- seq(from = epoch_starting, to = epoch_starting+epoch_length, length.out = epoch_samples)
     Time <- round(Time, digits = 3)
     Time <- data.frame(Time)
     
@@ -115,7 +117,7 @@ for (i in 1:17)
     for (i in 1:20)
     {
       epoch_x <- data.frame()
-      epoch_start = markers_left$tm[epoch_counter]-6 # -- change trial in settings
+      epoch_start = markers_left$tm[epoch_counter]+epoch_starting # -- change trial in settings
       epoch_end = epoch_start + epoch_length
       epoch_start_i = which(round(raw_eeg$Timestamp, 3) == round(epoch_start, 3))
       epoch_end_i = epoch_start_i + samples
@@ -136,7 +138,7 @@ for (i in 1:17)
     for (i in 1:20) 
     {
       epoch_x <- data.frame()
-      epoch_start = markers_right$tm[epoch_counter]-6 # -- change trial in settings
+      epoch_start = markers_right$tm[epoch_counter]+epoch_starting # -- change trial in settings
       epoch_end = epoch_start + epoch_length
       epoch_start_i = which(round(raw_eeg$Timestamp, 3) == round(epoch_start, 3))
       epoch_end_i = epoch_start_i + samples
@@ -149,8 +151,24 @@ for (i in 1:17)
       epoch_counter = epoch_counter + 1
     }
     
+    all_trial_signals1 <- all_trial_signals1 %>% arrange(Timestamp)
+    
+    rename_trial = 1
+    rename_start = 1
+    rename_end = epoch_samples
+    
+    for (i in 1:40)
+    {
+      all_trial_signals1$Trial[rename_start:rename_end] <- rename_trial
+      rename_trial = rename_trial + 1
+      rename_start = rename_start + epoch_samples
+      rename_end = rename_end + epoch_samples
+    }
+    
     aomi_tidy <- rbind(aomi_tidy, all_trial_signals1)
+    
   }
+  
   
   # Save EEG data per participant as CSV file
   write.table(aomi_tidy, file = sprintf("AOMI_%s_org.csv", p_code), sep = ",", row.names = FALSE)
