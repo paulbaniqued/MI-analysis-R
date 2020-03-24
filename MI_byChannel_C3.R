@@ -9,7 +9,7 @@ library(eegkit)
 library(Rmisc)
 
 # import EDF reader package and read .EDF file in the directory
-import_eeg <- read.edf("C:/Users/Paul/EDF Files/1_s1.edf", read.annotations = TRUE, header.only = FALSE)
+import_eeg <- read.edf("C:/Users/mnpdeb/AOMI_EDF/4_s5.edf", read.annotations = TRUE, header.only = FALSE)
 #import_eeg <- read.edf("C:/Users/paclab/EEG_MI/20190723140755_P04_Stream.edf", read.annotations = TRUE, header.only = FALSE)
 
 # construct main data frame for EEG anaylsis
@@ -149,7 +149,7 @@ channel2 = "Left"
 sampling_frequency = 500 #Hertz
 epoch_length = 15 #seconds
 samples = (sampling_frequency * epoch_length)
-t_e <- seq(from = -6.000, to = epoch_length, length.out = 7501)
+t_e <- seq(from = -6.000, to = -6.000 + epoch_length, length.out = 7501)
 t_e <- round(t_e, digits = 3)
 t_e <- data.frame(t_e)
 

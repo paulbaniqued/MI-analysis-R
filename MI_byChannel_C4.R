@@ -149,7 +149,7 @@ channel2 = "Right"
 sampling_frequency = 500 #Hertz
 epoch_length = 15 #seconds
 samples = (sampling_frequency * epoch_length)
-t_e <- seq(from = -6.000, to = epoch_length, length.out = 7501)
+t_e <- seq(from = -6.000, to = -6.000+epoch_length, length.out = 7501)
 t_e <- round(t_e, digits = 3)
 t_e <- data.frame(t_e)
 
