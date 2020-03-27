@@ -8,7 +8,7 @@ library(cowplot)
 library(eegkit)
 library(Rmisc)
 
-channel_name = "C3"
+channel_name = "C4"
 class1 = "Left"
 class2 = "Right"
 
@@ -69,8 +69,8 @@ for (i in 1:pax_no)
     
     eeg_left <- eeg %>% 
       dplyr::filter(Class == "Left") %>%
-      select(Trial, Time, C3) %>%
-      spread(Trial, C3) %>%
+      select(Trial, Time, C4) %>%
+      spread(Trial, C4) %>%
       select(-Time)
     
     eeg_left_bp <- (eeg_left)^2
@@ -78,8 +78,8 @@ for (i in 1:pax_no)
 
     eeg_right <- eeg %>% 
       dplyr::filter(Class == "Right") %>%
-      select(Trial, Time, C3) %>%
-      spread(Trial, C3) %>%
+      select(Trial, Time, C4) %>%
+      spread(Trial, C4) %>%
       select(-Time)
     
     eeg_right_bp <- (eeg_right)^2
