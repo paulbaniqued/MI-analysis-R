@@ -16,7 +16,8 @@ class2 = "Right"
 cum_erds_1 <- data.frame()[1:100,]
 cum_erds_2 <- data.frame()[1:100,]
 
-mua <- data.frame()[1:100,]
+mua_p <- data.frame()[1:100,]
+mua_t <- data.frame()[1:100,]
 
 # erds.plot <- ggplot() +
 #   geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
@@ -186,20 +187,18 @@ for (i in 1:pax_no)
       scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
       ylim(-200, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS
       xlab("seconds") + ylab("%ERD/ERS") +
-      annotate("text", x = -1.75, y = -190, label = "Baseline") +
-      annotate("text", x = 3.25, y = -190, label = "Trial") +
-      annotate("text", x = 7.75, y = -190, label = "Rest") +
+      annotate("text", x = -1.75, y = 190, label = "Baseline") +
+      annotate("text", x = 3.25, y = 190, label = "Trial") +
+      annotate("text", x = 7.75, y = 190, label = "Rest") +
       theme_cowplot(12)
     erds.plot
     
-    indplot <- erds.plot +
+    ind.plot <- erds.plot +
       geom_path(data = sqd_ave_plot, aes(Time, Signal, colour=Class), size= 2, span = 0.1, alpha=0.9) +
       geom_ribbon(data = sqd_ave_plot, aes(Time, ymin=CI_lower, ymax=CI_upper, fill=Class), alpha=0.4) +
       labs(title = sprintf("%s, Participant %s Session %s", channel_name, p_code, day), subtitle = expression(paste("20 trials per class: Relative ", mu, " Power % at 9-11 Hz, (S-B)/B x100"))) +
       ylim(-200, 200)
-    indplot
-    
-    ggsave(sprintf("%s_%s_%s_erds.png", p_code, day, channel_name), indplot,width=8.5, height=6, dpi=150, units="in", device='png')
+    ind.plot
 
     # # Plot for cumulative plots
     # indplot <- cbind(t_epoch_t, sqd_ave1, sqd_ave2)
@@ -212,6 +211,7 @@ for (i in 1:pax_no)
     # Mass univariate T-Tests (c/o Matt Craddock)
     runningT <- data.frame()[1:100,]
     pvals <- data.frame()[1:100,]
+    crit <- data.frame()[1:100,]
     rT_counter = 1
     
     for (i in 1:100)
@@ -223,10 +223,26 @@ for (i in 1:pax_no)
       pvals <- rbind(pvals, ttest$p.value)
       rT_counter = rT_counter + 1
     }
-    mua <- cbind(mua, pvals)
-    names(mua)[dp_count] <- sprintf("p%s-s%s", p_code, day)
+    mua_p <- cbind(mua_p, pvals)
+    names(mua_p)[dp_count] <- sprintf("p%s-s%s", p_code, day)
     
-    pvals <- cbind(t_epoch_t, pvals)
+    names(pvals) <- "pval"
+    
+    crit <- cbind(crit, (0 + (pvals$pval <= .05)))
+    names(crit) <- "crit"
+    crit[crit == 0] <- NA
+    crit[1:28,] <- NA
+    crit[82:100,] <- NA
+    
+    pvals <- cbind(t_epoch_t, pvals, crit)
+    
+    sigind.plot <- ind.plot + 
+      geom_line(data = pvals, aes(x = Time, y = crit-190),
+                na.rm = TRUE, size = 2, colour="#00BFC4")
+    sigind.plot
+    
+    ggsave(sprintf("%s_%s_%s_erds.png", p_code, day, channel_name), sigind.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    
     names(pvals)[2] <- "pval"
     pval.plot <- ggplot(data = pvals, aes(Time, pval)) + geom_point() + 
       geom_hline(aes(yintercept = 0.05, color = "red"), linetype = "dashed", show.legend = FALSE) +
@@ -240,6 +256,25 @@ for (i in 1:pax_no)
     pval.plot
     
     ggsave(sprintf("%s_%s_%s_pvals.png", p_code, day, channel_name), pval.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    
+    mua_t <- cbind(mua_t, runningT)
+    names(mua_t)[dp_count] <- sprintf("p%s-s%s", p_code, day)
+    
+    runningT <- cbind(t_epoch_t, runningT)
+    names(runningT)[2] <- "tstat"
+    runningT.plot <- ggplot(data = runningT, aes(Time, tstat)) + geom_point() + 
+      geom_hline(aes(yintercept = 0.0, color = "red"), linetype = "dashed", show.legend = FALSE) +
+      geom_vline(aes(xintercept = 0, y = NULL, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+      geom_vline(aes(xintercept = 6.5, y = NULL, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
+      scale_x_continuous(breaks=c(-3.5, 0.0, 6.5)) +
+      xlab("Time (seconds)") + ylab("t-statistic") + 
+      labs(title = sprintf("t-statistic: Left vs. Right in %s, Participant %s Session %s",  channel_name, p_code, day)) + 
+      theme_cowplot(12)
+    runningT.plot
+    
+    ggsave(sprintf("%s_%s_%s_runningt.png", p_code, day, channel_name), runningT.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    
+    
     dp_count = dp_count + 1
   }
   
@@ -248,7 +283,8 @@ for (i in 1:pax_no)
 }
 
 # Save EEG data per participant as CSV file
-write.table(mua, file = sprintf("AOMI_MUA_%s.csv", channel_name), sep = ",", row.names = FALSE)
+write.table(mua_p, file = sprintf("AOMI_MUA_pval_%s.csv", channel_name), sep = ",", row.names = FALSE)
+write.table(mua_t, file = sprintf("AOMI_MUA_tstat_%s.csv", channel_name), sep = ",", row.names = FALSE)
 
 # cum_ave1 <- data.frame()
 # cum_ave1 <- rowMeans(cum_erds_1)
