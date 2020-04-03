@@ -17,6 +17,7 @@ cum_erds_1 <- data.frame()[1:100,]
 cum_erds_2 <- data.frame()[1:100,]
 
 mua_p <- data.frame()[1:100,]
+mua_p_BH <- data.frame()[1:100,]
 mua_t <- data.frame()[1:100,]
 
 # erds.plot <- ggplot() +
@@ -181,20 +182,23 @@ for (i in 1:pax_no)
     # Individual Plots
     
     erds.plot <- ggplot() +
-      geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.40) +
-      geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.20) +
-      geom_vline(aes(xintercept = 0, y = NULL, size = 0.15, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
-      scale_x_continuous(breaks=c(-3.5, 0, 6.5)) +
-      ylim(-200, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS
-      xlab("seconds") + ylab("%ERD/ERS") +
-      annotate("text", x = -1.75, y = 190, label = "Baseline") +
-      annotate("text", x = 3.25, y = 190, label = "Trial") +
-      annotate("text", x = 7.75, y = 190, label = "Rest") +
+      #geom_rect(aes(xmin = 6.5, xmax = 9, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.10) +
+      geom_rect(aes(xmin = -3.5, xmax = 0, ymin = -Inf, ymax = Inf), fill = 'black', alpha = 0.10) +
+      geom_vline(aes(xintercept = 0, y = NULL, alpha = 0.6), size = 1, linetype = "dashed", show.legend = FALSE) +
+      geom_vline(aes(xintercept = 6.5, y = NULL, alpha = 0.6), size = 1, linetype = "dashed", show.legend = FALSE) +
+      geom_hline(aes(x = NULL, yintercept = 0,  alpha = 0.6), size = 1, linetype = "dashed", show.legend = FALSE) +
+      xlim(-3.5, 9.8) +
+      scale_x_continuous(breaks=c(-3.0, -2.0, -1.0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9.0)) +
+      ylim(-200, 200) +                                       # CHANGE THIS TO CHANGE Y AXIS+
+      xlab("time (seconds)") + ylab("power change (%)") +
+      # annotate("text", x = -1.75, y = 190, label = "Baseline") +
+      # annotate("text", x = 3.25, y = 190, label = "Trial") +
+      # annotate("text", x = 7.75, y = 190, label = "Rest") +
       theme_cowplot(12)
     erds.plot
     
     ind.plot <- erds.plot +
-      geom_path(data = sqd_ave_plot, aes(Time, Signal, colour=Class), size= 2, span = 0.1, alpha=0.9) +
+      geom_path(data = sqd_ave_plot, aes(Time, Signal, colour=Class), size= 1.5, span = 0.1, alpha=0.9) +
       geom_ribbon(data = sqd_ave_plot, aes(Time, ymin=CI_lower, ymax=CI_upper, fill=Class), alpha=0.4) +
       labs(title = sprintf("%s, Participant %s Session %s", channel_name, p_code, day), subtitle = expression(paste("20 trials per class: Relative ", mu, " Power % at 9-11 Hz, (S-B)/B x100"))) +
       ylim(-200, 200)
@@ -212,6 +216,7 @@ for (i in 1:pax_no)
     runningT <- data.frame()[1:100,]
     pvals <- data.frame()[1:100,]
     crit <- data.frame()[1:100,]
+    crit_BH <- data.frame()[1:100,]
     rT_counter = 1
     
     for (i in 1:100)
@@ -223,10 +228,18 @@ for (i in 1:pax_no)
       pvals <- rbind(pvals, ttest$p.value)
       rT_counter = rT_counter + 1
     }
-    mua_p <- cbind(mua_p, pvals)
-    names(mua_p)[dp_count] <- sprintf("p%s-s%s", p_code, day)
     
+    #Benjamini-Hochberg Correction
+    pvals <- unlist(pvals) %>% as.numeric()
+    pvals_BH <- p.adjust(pvals, method="BH") %>% data.frame()
+    pvals <- data.frame(pvals)
+    names(pvals_BH) <- "pval"
     names(pvals) <- "pval"
+    
+    mua_p <- cbind(mua_p, pvals)
+    mua_p_BH <- cbind(mua_p_BH, pvals_BH)
+    names(mua_p)[dp_count] <- sprintf("p%s-s%s", p_code, day)
+    names(mua_p_BH)[dp_count] <- sprintf("p%s-s%s_BH", p_code, day)
     
     crit <- cbind(crit, (0 + (pvals$pval <= .05)))
     names(crit) <- "crit"
@@ -234,24 +247,34 @@ for (i in 1:pax_no)
     crit[1:28,] <- NA
     crit[82:100,] <- NA
     
+    crit_BH <- cbind(crit_BH, (0 + (pvals_BH$pval <= .05)))
+    names(crit_BH) <- "crit_BH"
+    crit_BH[crit_BH == 0] <- NA
+    crit_BH[1:28,] <- NA
+    crit_BH[82:100,] <- NA
+    
     pvals <- cbind(t_epoch_t, pvals, crit)
+    pvals_BH <- cbind(t_epoch_t, pvals_BH, crit_BH)
     
     sigind.plot <- ind.plot + 
-      geom_line(data = pvals, aes(x = Time, y = crit-190),
-                na.rm = TRUE, size = 2, colour="#00BFC4")
+      geom_line(data = pvals, aes(x = Time, y = crit-170),
+                na.rm = TRUE, size = 2, colour="black") +
+      annotate("text", x = 7.5, y = -170, label = "p < 0.05") +
+      geom_line(data = pvals_BH, aes(x = Time, y = crit_BH-190),
+                na.rm = TRUE, size = 2, colour="blue") + 
+      annotate("text", x = 7.5, y = -190, label = "BH-corrected")
     sigind.plot
     
     ggsave(sprintf("%s_%s_%s_erds.png", p_code, day, channel_name), sigind.plot, width=8.5, height=6, dpi=150, units="in", device='png')
     
-    names(pvals)[2] <- "pval"
-    pval.plot <- ggplot(data = pvals, aes(Time, pval)) + geom_point() + 
+    pval.plot <- ggplot(data = pvals, aes(Time, pval)) + geom_point(alpha = 0.2) + geom_point(data = pvals_BH, aes(Time, pval), colour = "blue") +
       geom_hline(aes(yintercept = 0.05, color = "red"), linetype = "dashed", show.legend = FALSE) +
       geom_vline(aes(xintercept = 0, y = NULL, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
       geom_vline(aes(xintercept = 6.5, y = NULL, alpha = 0.6), linetype = "dashed", show.legend = FALSE) +
       scale_y_continuous(breaks=c(0.05, 0.25, 0.50, 0.75, 1.00)) +
       scale_x_continuous(breaks=c(-3.5, 0.0, 6.5)) +
       xlab("Time (seconds)") + ylab("p-value") + 
-      labs(title = sprintf("P-Values: Left vs. Right in %s, Participant %s Session %s",  channel_name, p_code, day)) + 
+      labs(title = sprintf("p-values: Left vs. Right in %s, Participant %s Session %s",  channel_name, p_code, day), subtitle = expression(paste("Benjamini-Hochberg Corrected p-values"))) + 
       theme_cowplot(12)
     pval.plot
     
@@ -284,6 +307,7 @@ for (i in 1:pax_no)
 
 # Save EEG data per participant as CSV file
 write.table(mua_p, file = sprintf("AOMI_MUA_pval_%s.csv", channel_name), sep = ",", row.names = FALSE)
+write.table(mua_p_BH, file = sprintf("AOMI_MUA_pval_BH_%s.csv", channel_name), sep = ",", row.names = FALSE)
 write.table(mua_t, file = sprintf("AOMI_MUA_tstat_%s.csv", channel_name), sep = ",", row.names = FALSE)
 
 # cum_ave1 <- data.frame()
@@ -345,3 +369,4 @@ write.table(mua_t, file = sprintf("AOMI_MUA_tstat_%s.csv", channel_name), sep = 
 # names(pvals)[2] <- "pval"
 # pval.plot <- ggplot(data = pvals, aes(t_epoch_t, pval)) + geom_point()
 # pval.plot
+

@@ -7,7 +7,7 @@ library(reshape2)
 
 channel = "C4"
 
-pval_df <- read.csv(sprintf("AOMI_MUA_pval_%s.csv", channel))  # read csv file 
+pval_df <- read.csv(sprintf("AOMI_MUA_pval_BH_%s.csv", channel))  # read csv file 
 p_datapoints = as.numeric(ncol(pval_df))
 pval_df <- melt(pval_df)
 
@@ -23,7 +23,6 @@ names(p_r)[3] <- "p_value"
 
 rasterplot <- ggplot(p_r, aes(x=Time, y=Sessions, fill=p_value)) +
   geom_raster() +
-  scale_fill_gradientn(colours = cols) +
   coord_fixed(ratio = 1/8) +
   xlim(0,6.5) +
   scale_fill_gradientn(
