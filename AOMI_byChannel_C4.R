@@ -13,8 +13,8 @@ class1 = "Left"
 class2 = "Right"
 
 # Set empty data frame for left and right classes
-cum_erds_1 <- data.frame()[1:100,]
-cum_erds_2 <- data.frame()[1:100,]
+cum_erds <- data.frame()[1:100,]
+
 
 mua_p <- data.frame()[1:100,]
 mua_p_BH <- data.frame()[1:100,]
@@ -70,7 +70,7 @@ for (i in 1:pax_no)
     Time <- eeg[1:6200,] %>% select(Time) 
     
     eeg_left <- eeg %>% 
-      dplyr::filter(Class == "Left") %>%
+      dplyr::filter(Class == class1) %>%
       select(Trial, Time, C4) %>%
       spread(Trial, C4) %>%
       select(-Time)
@@ -79,7 +79,7 @@ for (i in 1:pax_no)
     eeg_left_bp <- cbind(Time, eeg_left_bp)
 
     eeg_right <- eeg %>% 
-      dplyr::filter(Class == "Right") %>%
+      dplyr::filter(Class == class2) %>%
       select(Trial, Time, C4) %>%
       spread(Trial, C4) %>%
       select(-Time)
@@ -150,11 +150,11 @@ for (i in 1:pax_no)
 
     sqd_ave1 <- data.frame(rowMeans(erd_pct1))
     names(sqd_ave1) <- "Signal"
-    cum_erds_1 <- cbind(cum_erds_1, sqd_ave1)
     
     sqd_ave2 <- data.frame(rowMeans(erd_pct2))
     names(sqd_ave2) <- "Signal"
-    cum_erds_2 <- cbind(cum_erds_2, sqd_ave2)
+
+    # Statistics
     
     stdErr <- function(x) {sd(x)/ sqrt(length(x))}
     conf <- function(x) {CI(x, ci = 0.95)}
@@ -178,7 +178,6 @@ for (i in 1:pax_no)
     sqd_ave2 <- cbind(t_epoch_t, sqd_ave2, CI_upper, CI_lower, class_col2)
     
     sqd_ave_plot <- rbind(sqd_ave1, sqd_ave2)
-    
     
     # Individual Plots
     
@@ -204,6 +203,15 @@ for (i in 1:pax_no)
       labs(title = sprintf("%s, Participant %s Session %s", channel_name, p_code, day), subtitle = expression(paste("20 trials per class: Relative ", mu, " Power % at 9-11 Hz, (S-B)/B x100"))) +
       ylim(-200, 200)
     ind.plot
+    
+    # Cumulative
+    current_session <- data.frame(list(rep(sprintf("p%s-s%s", p_code, day), 100)))
+    names(current_session)[1] <- "Session"
+    
+    cum_erds_1_use <- cbind(current_session, sqd_ave1)
+    cum_erds <- rbind(cum_erds, cum_erds_1_use)
+    cum_erds_2_use <- cbind(current_session, sqd_ave2)
+    cum_erds <- rbind(cum_erds, cum_erds_2_use)
     
     # # Plot for cumulative plots
     # indplot <- cbind(t_epoch_t, sqd_ave1, sqd_ave2)
@@ -266,7 +274,7 @@ for (i in 1:pax_no)
       annotate("text", x = 7.5, y = -190, label = "BH-corrected")
     sigind.plot
     
-    ggsave(sprintf("%s_%s_%s_erds.png", p_code, day, channel_name), sigind.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    #ggsave(sprintf("%s_%s_%s_erds.png", p_code, day, channel_name), sigind.plot, width=8.5, height=6, dpi=150, units="in", device='png')
     
     pval.plot <- ggplot(data = pvals, aes(Time, pval)) + geom_point(alpha = 0.2) + geom_point(data = pvals_BH, aes(Time, pval), colour = "blue") +
       geom_hline(aes(yintercept = 0.05, color = "red"), linetype = "dashed", show.legend = FALSE) +
@@ -279,7 +287,7 @@ for (i in 1:pax_no)
       theme_cowplot(12)
     pval.plot
     
-    ggsave(sprintf("%s_%s_%s_pvals.png", p_code, day, channel_name), pval.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    #ggsave(sprintf("%s_%s_%s_pvals.png", p_code, day, channel_name), pval.plot, width=8.5, height=6, dpi=150, units="in", device='png')
     
     mua_t <- cbind(mua_t, runningT)
     names(mua_t)[dp_count] <- sprintf("p%s-s%s", p_code, day)
@@ -296,20 +304,22 @@ for (i in 1:pax_no)
       theme_cowplot(12)
     runningT.plot
     
-    ggsave(sprintf("%s_%s_%s_runningt.png", p_code, day, channel_name), runningT.plot, width=8.5, height=6, dpi=150, units="in", device='png')
+    #ggsave(sprintf("%s_%s_%s_runningt.png", p_code, day, channel_name), runningT.plot, width=8.5, height=6, dpi=150, units="in", device='png')
     
     
     dp_count = dp_count + 1
   }
   
   p_code_count = p_code_count + 1
-  
+
 }
 
 # Save EEG data per participant as CSV file
 write.table(mua_p, file = sprintf("AOMI_MUA_pval_%s.csv", channel_name), sep = ",", row.names = FALSE)
 write.table(mua_p_BH, file = sprintf("AOMI_MUA_pval_BH_%s.csv", channel_name), sep = ",", row.names = FALSE)
 write.table(mua_t, file = sprintf("AOMI_MUA_tstat_%s.csv", channel_name), sep = ",", row.names = FALSE)
+
+write.table(cum_erds, file = sprintf("AOMI_ERDS_%s.csv", channel_name), sep = ",", row.names = FALSE)
 
 # cum_ave1 <- data.frame()
 # cum_ave1 <- rowMeans(cum_erds_1)
@@ -370,3 +380,4 @@ write.table(mua_t, file = sprintf("AOMI_MUA_tstat_%s.csv", channel_name), sep = 
 # names(pvals)[2] <- "pval"
 # pval.plot <- ggplot(data = pvals, aes(t_epoch_t, pval)) + geom_point()
 # pval.plot
+
