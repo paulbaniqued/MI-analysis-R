@@ -1,4 +1,4 @@
-# Motor Imagery ERP Analysis
+# Motor Imagery ERD/S Analysis
 # Initial Packages Used
 library(edf)
 library(ggplot2)
